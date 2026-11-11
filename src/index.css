@@ -2,4 +2,41 @@
 
 body {
   background: #0f172a;
+  color-scheme: dark;
+}
+
+/* espaço para a barra inferior (64px) e o botão de adicionar */
+.com-barra {
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+}
+
+.barra-inferior {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+progress {
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #27272a;
+}
+progress::-webkit-progress-bar {
+  background: #27272a;
+}
+progress::-webkit-progress-value {
+  background: #fbbf24;
+}
+progress::-moz-progress-bar {
+  background: #fbbf24;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
 }
