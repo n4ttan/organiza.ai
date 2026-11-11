@@ -8,6 +8,7 @@ import FormularioFinancas from './telas/FormularioFinancas.jsx'
 import Formulario from './telas/Formulario.jsx'
 import Hoje from './telas/Hoje.jsx'
 import Icone from './telas/icones.jsx'
+import ImportarExtrato from './telas/ImportarExtrato.jsx'
 import Projeto from './telas/Projeto.jsx'
 import Projetos from './telas/Projetos.jsx'
 import { foco } from './telas/comum.jsx'
@@ -120,6 +121,21 @@ export default function App() {
 
   if (form && dados) {
     const fechar = () => setForm(null)
+    if (form.tipo === 'importar-extrato') {
+      return (
+        <ImportarExtrato
+          dados={dados}
+          aoSalvar={(novas) => {
+            salvar(
+              { ...dados, transacoes: [...(dados.transacoes ?? []), ...novas] },
+              `Importar ${novas.length} transacoes de extrato`
+            )
+            fechar()
+          }}
+          aoFechar={fechar}
+        />
+      )
+    }
     if (form.tipo) {
       const chave = form.tipo === 'recorrente' ? 'recorrentes' : 'transacoes'
       const comRegra = (regra) => regra && { config: { ...dados.config, regrasCategoria: [...(dados.config?.regrasCategoria ?? []), regra] } }
@@ -137,7 +153,7 @@ export default function App() {
     if (aba === 'hoje') tela = <Hoje dados={dados} expiraEm={expiraEm} aoAlternar={alternar} aoEditar={editar} />
     else if (projeto) tela = <Projeto projeto={projeto} pendencias={dados.pendencias} aoVoltar={() => setProjetoId(null)} aoAlternar={alternar} aoEditar={editar} aoHoras={horas} />
     else if (aba === 'faculdade') tela = <Faculdade dados={dados} aoAbrir={setProjetoId} />
-    else if (aba === 'financas') tela = <Financas dados={dados} aoLancamento={(item) => setForm({ tipo: 'lancamento', item })} aoRecorrente={(item) => setForm({ tipo: 'recorrente', item })} aoFatura={fatura} />
+    else if (aba === 'financas') tela = <Financas dados={dados} aoLancamento={(item) => setForm({ tipo: 'lancamento', item })} aoRecorrente={(item) => setForm({ tipo: 'recorrente', item })} aoFatura={fatura} aoImportar={() => setForm({ tipo: 'importar-extrato' })} />
     else tela = <Projetos dados={dados} aoAbrir={setProjetoId} />
   }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { categorizar, centavosDe, faturaPadrao } from '../regras/financas.js'
+import { categorizar, centavosDe, faturaPadrao, formatarReais } from '../regras/financas.js'
 import { hojeEmBrasilia } from '../regras/lembretes.js'
 import { botao, botaoNeutro, campo, foco } from './comum.jsx'
 import Icone from './icones.jsx'
@@ -12,6 +12,7 @@ export default function FormularioFinancas({ modo, inicial, dados, aoSalvar, aoE
   const recorrente = modo === 'recorrente'
   const hoje = hojeEmBrasilia()
   const contas = dados.contas ?? []
+  const recorrentes = dados.recorrentes ?? []
   const categorias = dados.config?.categorias ?? ['outros']
   const regras = dados.config?.regrasCategoria
 
@@ -22,6 +23,7 @@ export default function FormularioFinancas({ modo, inicial, dados, aoSalvar, aoE
   const [contaId, setContaId] = useState(inicial ? (inicial.contaId ?? '') : recorrente ? '' : (contas[0]?.id ?? ''))
   const [data, setData] = useState(inicial?.data ?? hoje)
   const [faturaMes, setFaturaMes] = useState(inicial?.faturaMes ?? '')
+  const [recorrenteId, setRecorrenteId] = useState(inicial?.recorrenteId ?? '')
   const [ativo, setAtivo] = useState(inicial?.ativo ?? true)
   const [lembrar, setLembrar] = useState(false)
 
@@ -40,6 +42,8 @@ export default function FormularioFinancas({ modo, inicial, dados, aoSalvar, aoE
       Object.assign(item, { data, origem: inicial?.origem ?? 'manual' })
       if (noCartao) item.faturaMes = fatura
       else delete item.faturaMes
+      if (recorrenteId) item.recorrenteId = recorrenteId
+      else delete item.recorrenteId
     }
     aoSalvar(item, lembrar && !entrada ? { contem: descricao.trim(), categoria: categoriaFinal } : null)
   }
@@ -109,6 +113,23 @@ export default function FormularioFinancas({ modo, inicial, dados, aoSalvar, aoE
               </label>
             )}
           </div>
+        )}
+
+        {!recorrente && !entrada && recorrentes.length > 0 && (
+          <label className="flex flex-col gap-2">
+            <span className={rotuloCampo}>Vincular ao recorrente (opcional)</span>
+            <select value={recorrenteId} onChange={(e) => setRecorrenteId(e.target.value)} className={campo}>
+              <option value="">Nenhum (gasto avulso)</option>
+              {recorrentes.filter((r) => r.ativo !== false && r.valorCentavos < 0).map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.descricao} ({formatarReais(r.valorCentavos)})
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-apagado">
+              Lançamentos vinculados a um recorrente não duplicam o valor no resumo do mês.
+            </span>
+          </label>
         )}
 
         {recorrente && (

@@ -54,7 +54,8 @@ async function principal() {
     const criada = await api('/config', 'POST', {
       file_name_prefix: 'organiza',
       display_timezone: 'GMT-03',
-      frequency: { hour: 0, type: 'monthly', value: 1 }, // obrigatório; o agendamento continua desligado
+      execute_after_withdrawal: false,
+      frequency: { hour: 0, type: 'monthly', value: 1 }, 
       columns: COLUNAS.map((key) => ({ key })),
     })
     if (criada.status !== 201 && criada.status !== 200) parar('Criar configuração', criada)

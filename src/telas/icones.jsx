@@ -11,6 +11,7 @@ const tracos = {
   direita: 'M9 5l7 7-7 7',
   fechar: 'M6 6l12 12M18 6L6 18',
   lixo: 'M4 7h16M10 11v6M14 11v6M6 7l1 12h10l1-12M9 7V4h6v3',
+  upload: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M16 8l-4-4-4 4M12 4v12',
 }
 
 export default function Icone({ nome, tamanho = 24 }) {

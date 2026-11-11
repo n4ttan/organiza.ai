@@ -39,16 +39,20 @@ function Linha({ titulo, sub, valor, apagada, aoTocar }) {
   )
 }
 
-export default function Financas({ dados, aoLancamento, aoRecorrente, aoFatura }) {
+export default function Financas({ dados, aoLancamento, aoRecorrente, aoFatura, aoImportar }) {
   const [mes, setMes] = useState(() => hojeEmBrasilia().slice(0, 7))
   const r = resumoDoMes(dados, mes)
   const contas = dados.contas ?? []
+  const recorrentes = dados.recorrentes ?? []
   const nomeConta = (id) => {
     const c = contas.find((x) => x.id === id)
     return c ? (c.tipo === 'cartao' ? `cartão ${c.nome}` : c.nome) : null
   }
+  const nomeRecorrente = (recId) => {
+    const item = recorrentes.find((x) => x.id === recId)
+    return item ? `recorrente: ${item.descricao}` : null
+  }
   const lancamentos = (dados.transacoes ?? []).filter((t) => (t.faturaMes ?? t.data.slice(0, 7)) === mes).sort((a, b) => (a.data < b.data ? 1 : -1))
-  const recorrentes = dados.recorrentes ?? []
   const partes = [
     ['Fixos', r.fixos, 'fill-neutral-500'],
     ['Gastos', r.gastos, 'fill-neutral-300'],
@@ -131,13 +135,31 @@ export default function Financas({ dados, aoLancamento, aoRecorrente, aoFatura }
         </Secao>
       )}
 
-      <Secao titulo="Lançamentos">
+      <Secao
+        titulo="Lançamentos"
+        lateral={
+          <button
+            type="button"
+            onClick={aoImportar}
+            className={`-my-3 flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-medium text-verde ${foco}`}
+          >
+            <Icone nome="upload" tamanho={16} />
+            Importar
+          </button>
+        }
+      >
         {lancamentos.length === 0 ? (
           <p className={`${cartao} p-4 text-sm text-apagado`}>Nenhum lançamento em {nomeDoMes(mes)}. Toque em + para anotar um gasto ou uma entrada.</p>
         ) : (
           <ul className={lista}>
             {lancamentos.map((t) => (
-              <Linha key={t.id} titulo={t.descricao} sub={[dataCurta(t.data), t.categoria, nomeConta(t.contaId)].filter(Boolean).join(' · ')} valor={t.valorCentavos} aoTocar={() => aoLancamento(t)} />
+              <Linha
+                key={t.id}
+                titulo={t.descricao}
+                sub={[dataCurta(t.data), t.categoria, nomeRecorrente(t.recorrenteId), nomeConta(t.contaId)].filter(Boolean).join(' · ')}
+                valor={t.valorCentavos}
+                aoTocar={() => aoLancamento(t)}
+              />
             ))}
           </ul>
         )}
