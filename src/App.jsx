@@ -3,6 +3,8 @@ import { dadosEmCache, gravarDados, lerDados } from './repositorio/github.js'
 import { hojeEmBrasilia } from './regras/lembretes.js'
 import Ajustes from './telas/Ajustes.jsx'
 import Faculdade from './telas/Faculdade.jsx'
+import Financas from './telas/Financas.jsx'
+import FormularioFinancas from './telas/FormularioFinancas.jsx'
 import Formulario from './telas/Formulario.jsx'
 import Hoje from './telas/Hoje.jsx'
 import Icone from './telas/icones.jsx'
@@ -10,12 +12,13 @@ import Projeto from './telas/Projeto.jsx'
 import Projetos from './telas/Projetos.jsx'
 import { foco } from './telas/comum.jsx'
 
-const abas = [['hoje', 'Hoje'], ['faculdade', 'Faculdade'], ['projetos', 'Projetos'], ['ajustes', 'Ajustes']]
+const abas = [['hoje', 'Hoje'], ['faculdade', 'Faculdade'], ['projetos', 'Projetos'], ['financas', 'Finanças']]
+const abaInicial = () => [...abas.map(([id]) => id), 'ajustes'].find((id) => id === location.hash.slice(1)) ?? 'hoje'
 
 export default function App() {
   const [token, setToken] = useState(() => localStorage.getItem('gh_token') ?? '')
   const [estado, setEstado] = useState(() => dadosEmCache() ?? { dados: null, sha: null })
-  const [aba, setAba] = useState('hoje')
+  const [aba, setAba] = useState(abaInicial)
   const [offline, setOffline] = useState(false)
   const [expiraEm, setExpiraEm] = useState(null)
   const [msg, setMsg] = useState('')
@@ -88,16 +91,25 @@ export default function App() {
     else trocarPendencia({ ...p, status: 'feita', feitaEm: hojeEmBrasilia() }, 'Conclui pendencia')
   }
 
-  function gravarPendencia(p) {
-    const existe = dados.pendencias.some((x) => x.id === p.id)
-    if (existe) trocarPendencia(p, 'Edita pendencia')
-    else salvar({ ...dados, pendencias: [...dados.pendencias, p] }, 'Nova pendencia')
+  // pendencias, transacoes e recorrentes: mesma gravação por id
+  function gravarEm(chave, item, mensagem, extra) {
+    const atual = dados[chave] ?? []
+    const nova = atual.some((x) => x.id === item.id) ? atual.map((x) => (x.id === item.id ? item : x)) : [...atual, item]
+    salvar({ ...dados, ...extra, [chave]: nova }, mensagem)
     setForm(null)
   }
 
-  function excluir(p) {
-    salvar({ ...dados, pendencias: dados.pendencias.filter((x) => x.id !== p.id) }, 'Exclui pendencia')
+  function excluirDe(chave, item, mensagem) {
+    salvar({ ...dados, [chave]: (dados[chave] ?? []).filter((x) => x.id !== item.id) }, mensagem)
     setForm(null)
+  }
+
+  function fatura(contaId, mes, centavos) {
+    const conta = dados.contas.find((c) => c.id === contaId)
+    if (centavos === (conta.faturas?.[mes] ?? null)) return
+    const { [mes]: _, ...faturas } = conta.faturas ?? {}
+    if (centavos != null) faturas[mes] = centavos
+    salvar({ ...dados, contas: dados.contas.map((c) => (c.id === contaId ? { ...c, faturas } : c)) }, 'Valor de fatura')
   }
 
   function horas(projeto, valor) {
@@ -107,47 +119,59 @@ export default function App() {
   }
 
   if (form && dados) {
-    return <Formulario projetos={dados.projetos} inicial={form.pendencia} projetoId={form.projetoId} aoSalvar={gravarPendencia} aoExcluir={excluir} aoFechar={() => setForm(null)} />
+    const fechar = () => setForm(null)
+    if (form.tipo) {
+      const chave = form.tipo === 'recorrente' ? 'recorrentes' : 'transacoes'
+      const comRegra = (regra) => regra && { config: { ...dados.config, regrasCategoria: [...(dados.config?.regrasCategoria ?? []), regra] } }
+      return <FormularioFinancas modo={form.tipo} inicial={form.item} dados={dados} aoSalvar={(item, regra) => gravarEm(chave, item, `Grava ${form.tipo}`, comRegra(regra))} aoExcluir={(item) => excluirDe(chave, item, `Exclui ${form.tipo}`)} aoFechar={fechar} />
+    }
+    return <Formulario projetos={dados.projetos} inicial={form.pendencia} projetoId={form.projetoId} aoSalvar={(p) => gravarEm('pendencias', p, 'Grava pendencia')} aoExcluir={(p) => excluirDe('pendencias', p, 'Exclui pendencia')} aoFechar={fechar} />
   }
 
   const projeto = projetoId && dados?.projetos.find((p) => p.id === projetoId)
   const editar = (p) => setForm({ pendencia: p })
-  let tela = <p className="text-zinc-400">Carregando…</p>
+  let tela = <p className="text-apagado">Carregando…</p>
   if (!token || aba === 'ajustes') {
     tela = <Ajustes token={token} dados={dados} sha={estado.sha} aoSalvarToken={salvarToken} salvar={salvar} />
   } else if (dados) {
     if (aba === 'hoje') tela = <Hoje dados={dados} expiraEm={expiraEm} aoAlternar={alternar} aoEditar={editar} />
     else if (projeto) tela = <Projeto projeto={projeto} pendencias={dados.pendencias} aoVoltar={() => setProjetoId(null)} aoAlternar={alternar} aoEditar={editar} aoHoras={horas} />
     else if (aba === 'faculdade') tela = <Faculdade dados={dados} aoAbrir={setProjetoId} />
+    else if (aba === 'financas') tela = <Financas dados={dados} aoLancamento={(item) => setForm({ tipo: 'lancamento', item })} aoRecorrente={(item) => setForm({ tipo: 'recorrente', item })} aoFatura={fatura} />
     else tela = <Projetos dados={dados} aoAbrir={setProjetoId} />
   }
 
+  const irPara = (id) => (setAba(id), setProjetoId(null), history.replaceState(null, '', '#' + id), scrollTo(0, 0))
+  const financas = aba === 'financas'
+
   return (
-    <div className="mx-auto min-h-dvh max-w-md text-zinc-50">
-      <main className="com-barra flex flex-col gap-4 p-4">
-        <div role="status" className="flex flex-col gap-2">
-          {offline && <p className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">Sem conexão: mostrando os dados salvos</p>}
-          {msg && <p className="text-red-400">{msg}</p>}
+    <div className="mx-auto min-h-dvh max-w-md text-tinta">
+      <main className="topo-seguro com-barra flex flex-col gap-4 px-4">
+        <div role="status" className="flex flex-col gap-2 empty:hidden">
+          {offline && <p className="rounded-xl border border-linha bg-painel px-3 py-2 text-sm text-apagado">Sem conexão: mostrando os dados salvos</p>}
+          {msg && <p className="rounded-xl border border-alerta/40 bg-alerta/10 px-3 py-2 text-sm text-alerta">{msg}</p>}
         </div>
-        {tela}
+        <div className="relative">
+          {token && (
+            <button type="button" onClick={() => irPara('ajustes')} aria-label="Ajustes" aria-current={aba === 'ajustes' ? 'page' : undefined} className={`absolute top-0 right-0 flex h-11 w-11 items-center justify-center rounded-full border border-linha bg-painel transition-colors active:bg-relevo ${aba === 'ajustes' ? 'text-verde' : 'text-apagado'} ${foco}`}>
+              <Icone nome="ajustes" tamanho={20} />
+            </button>
+          )}
+          {tela}
+        </div>
       </main>
 
       {token && (
-        <nav aria-label="Principal" className="barra-inferior fixed inset-x-0 bottom-0 border-t border-zinc-800 bg-zinc-900">
+        <nav aria-label="Principal" className="barra-inferior fixed inset-x-0 bottom-0 border-t border-linha bg-fundo/85 backdrop-blur-md">
           <div className="relative mx-auto flex h-16 max-w-md">
             {dados && aba !== 'ajustes' && (
-              <button type="button" onClick={() => setForm({ projetoId })} aria-label="Adicionar pendência" className={`absolute right-4 bottom-full mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-amber-400 text-zinc-950 ${foco}`}>
+              <button type="button" onClick={() => setForm(financas ? { tipo: 'lancamento' } : { projetoId })} aria-label={financas ? 'Adicionar lançamento' : 'Adicionar pendência'} className={`absolute right-4 bottom-full mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-verde text-fundo shadow-lg shadow-verde/20 transition-transform active:scale-95 ${foco}`}>
                 <Icone nome="mais" />
               </button>
             )}
             {abas.map(([id, nome]) => (
-              <button
-                key={id}
-                type="button"
-                aria-current={aba === id ? 'page' : undefined}
-                onClick={() => (setAba(id), setProjetoId(null))}
-                className={`flex flex-1 flex-col items-center justify-center gap-1 text-sm ${aba === id ? 'text-amber-400' : 'text-zinc-400'} ${foco}`}
-              >
+              <button key={id} type="button" aria-current={aba === id ? 'page' : undefined} onClick={() => irPara(id)} className={`relative flex flex-1 flex-col items-center justify-center gap-1 text-xs font-medium transition-colors ${aba === id ? 'text-verde' : 'text-apagado'} ${foco}`}>
+                {aba === id && <span className="absolute top-0 h-0.5 w-8 rounded-full bg-verde" />}
                 <Icone nome={id} />
                 {nome}
               </button>

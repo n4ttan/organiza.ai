@@ -1,25 +1,25 @@
-import { CartaoProjeto } from './comum.jsx'
+import { Cabecalho, LinhaProjeto, Secao, Vazio, lista } from './comum.jsx'
 
 const grupos = [['ativo', 'Ativos'], ['depois', 'Depois'], ['pronto', 'Prontos']]
 
 export default function Projetos({ dados, aoAbrir }) {
   const outros = dados.projetos.filter((p) => p.area !== 'faculdade')
+  const ativos = outros.filter((p) => p.status === 'ativo').length
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl leading-tight font-semibold">Projetos</h1>
-      {outros.length === 0 && <p className="text-zinc-400">Nenhum projeto fora da faculdade.</p>}
+      <Cabecalho sobre={`${ativos} ${ativos === 1 ? 'ativo' : 'ativos'}`} titulo="Projetos" />
+      {outros.length === 0 && <Vazio titulo="Nenhum projeto">Nada fora da faculdade por aqui.</Vazio>}
       {grupos.map(([status, nome]) => {
-        const lista = outros.filter((p) => p.status === status).sort((a, b) => a.prioridade - b.prioridade)
+        const doGrupo = outros.filter((p) => p.status === status).sort((a, b) => a.prioridade - b.prioridade)
         return (
-          lista.length > 0 && (
-            <section key={status} className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-zinc-400">{nome}</h2>
-              <ul className="flex flex-col gap-2">
-                {lista.map((p) => (
-                  <CartaoProjeto key={p.id} projeto={p} pendencias={dados.pendencias} aoAbrir={aoAbrir} />
+          doGrupo.length > 0 && (
+            <Secao key={status} titulo={nome}>
+              <ul className={lista}>
+                {doGrupo.map((p) => (
+                  <LinhaProjeto key={p.id} projeto={p} pendencias={dados.pendencias} aoAbrir={aoAbrir} />
                 ))}
               </ul>
-            </section>
+            </Secao>
           )
         )
       })}

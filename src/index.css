@@ -1,13 +1,33 @@
 @import 'tailwindcss';
 
+/* Paleta única do app: preto, cinza escuro e verde. Mudou a cor? Muda só aqui. */
+@theme {
+  --color-fundo: #0a0a0a;
+  --color-painel: #141414;
+  --color-relevo: #1f1f1f;
+  --color-linha: #262626;
+  --color-tinta: #fafafa;
+  --color-apagado: #a3a3a3;
+  --color-verde: #4ade80;
+  --color-verde-escuro: #166534;
+  --color-alerta: #f87171;
+}
+
 body {
-  background: #0f172a;
+  background: var(--color-fundo);
+  color: var(--color-tinta);
   color-scheme: dark;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* instalado no iPhone o conteúdo começa atrás do relógio */
+.topo-seguro {
+  padding-top: calc(1rem + env(safe-area-inset-top));
 }
 
 /* espaço para a barra inferior (64px) e o botão de adicionar */
 .com-barra {
-  padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(9rem + env(safe-area-inset-bottom));
 }
 
 .barra-inferior {
@@ -16,21 +36,24 @@ body {
 
 progress {
   appearance: none;
+  display: block;
   width: 100%;
-  height: 8px;
+  height: 6px;
   border: 0;
-  border-radius: 8px;
+  border-radius: 999px;
   overflow: hidden;
-  background: #27272a;
+  background: var(--color-relevo);
 }
 progress::-webkit-progress-bar {
-  background: #27272a;
+  background: var(--color-relevo);
 }
 progress::-webkit-progress-value {
-  background: #fbbf24;
+  background: var(--color-verde);
+  border-radius: 999px;
 }
 progress::-moz-progress-bar {
-  background: #fbbf24;
+  background: var(--color-verde);
+  border-radius: 999px;
 }
 
 @media (prefers-reduced-motion: reduce) {

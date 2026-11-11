@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { gravarInscricao } from '../repositorio/github.js'
 import { VAPID_PUBLICA } from '../vapid-publica.js'
-import { campo, foco } from './comum.jsx'
+import { Cabecalho, botao, campo, cartao as base, foco } from './comum.jsx'
 import Icone from './icones.jsx'
 
 // Safari exige a chave em bytes, não em base64url.
@@ -15,8 +15,7 @@ const nomesDias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 
 const letrasDias = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
 const padrao = { horas: ['07:30', '19:00'], dias: [0, 1, 2, 3, 4, 5, 6] }
 
-const botao = `h-12 rounded-lg bg-amber-400 font-semibold text-zinc-950 disabled:opacity-70 ${foco}`
-const cartao = 'flex flex-col gap-4 rounded-lg border border-zinc-800 bg-zinc-900 p-4'
+const cartao = `${base} flex flex-col gap-4 p-4`
 
 function Lembretes({ dados, salvar }) {
   const atual = dados.config?.lembretes ?? padrao
@@ -37,24 +36,24 @@ function Lembretes({ dados, salvar }) {
         {horas.map((h, i) => (
           <div key={i} className="flex gap-2">
             <input type="time" required aria-label={`Horário ${i + 1}`} value={h} onChange={(e) => setHoras(horas.map((x, j) => (j === i ? e.target.value : x)))} className={campo} />
-            <button type="button" disabled={horas.length === 1} onClick={() => setHoras(horas.filter((_, j) => j !== i))} aria-label={`Remover horário ${i + 1}`} className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-zinc-800 text-zinc-400 disabled:opacity-70 ${foco}`}>
+            <button type="button" disabled={horas.length === 1} onClick={() => setHoras(horas.filter((_, j) => j !== i))} aria-label={`Remover horário ${i + 1}`} className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-linha text-apagado disabled:opacity-70 ${foco}`}>
               <Icone nome="lixo" />
             </button>
           </div>
         ))}
-        <button type="button" onClick={() => setHoras([...horas, '12:00'])} className={`flex h-12 items-center justify-center gap-2 rounded-lg border border-zinc-800 ${foco}`}>
+        <button type="button" onClick={() => setHoras([...horas, '12:00'])} className={`flex h-12 items-center justify-center gap-2 rounded-xl border border-linha ${foco}`}>
           <Icone nome="mais" />
           Adicionar horário
         </button>
       </div>
       <div role="group" aria-label="Dias da semana" className="flex justify-between">
         {letrasDias.map((letra, d) => (
-          <button key={d} type="button" aria-label={nomesDias[d]} aria-pressed={dias.includes(d)} onClick={() => setDias(dias.includes(d) ? dias.filter((x) => x !== d) : [...dias, d])} className={`h-11 w-11 rounded-lg ${dias.includes(d) ? 'bg-amber-400 font-semibold text-zinc-950' : 'border border-zinc-800 text-zinc-400'} ${foco}`}>
+          <button key={d} type="button" aria-label={nomesDias[d]} aria-pressed={dias.includes(d)} onClick={() => setDias(dias.includes(d) ? dias.filter((x) => x !== d) : [...dias, d])} className={`h-11 w-11 rounded-full ${dias.includes(d) ? 'bg-verde font-semibold text-fundo' : 'border border-linha text-apagado'} ${foco}`}>
             {letra}
           </button>
         ))}
       </div>
-      <p className="text-sm text-zinc-400">O primeiro horário do dia traz o resumo; os outros avisam só do que vence amanhã. Chega dentro da hora cheia escolhida.</p>
+      <p className="text-sm text-apagado">O primeiro horário do dia traz o resumo; os outros avisam só do que vence amanhã. Chega dentro da hora cheia escolhida.</p>
       <button type="submit" className={botao}>Salvar lembretes</button>
     </form>
   )
@@ -86,13 +85,13 @@ export default function Ajustes({ token, dados, sha, aoSalvarToken, salvar }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl leading-tight font-semibold">Ajustes</h1>
+      <Cabecalho sobre="Este aparelho" titulo="Ajustes" />
 
       <form onSubmit={(e) => (e.preventDefault(), aoSalvarToken(campoToken.trim()))} className={cartao}>
         <label className="flex flex-col gap-2">
           <span className="font-medium">Token do GitHub (organiza-dados)</span>
-          <input type="password" required autoComplete="off" value={campoToken} onChange={(e) => setCampoToken(e.target.value)} placeholder="github_pat_…" className={`${campo} placeholder:text-zinc-400`} />
-          <span className="text-sm text-zinc-400">Fica só neste aparelho.</span>
+          <input type="password" required autoComplete="off" value={campoToken} onChange={(e) => setCampoToken(e.target.value)} placeholder="github_pat_…" className={`${campo}`} />
+          <span className="text-sm text-apagado">Fica só neste aparelho.</span>
         </label>
         <button type="submit" className={botao}>Salvar token</button>
       </form>
@@ -110,7 +109,7 @@ export default function Ajustes({ token, dados, sha, aoSalvarToken, salvar }) {
             Ativar notificações neste aparelho
           </button>
         )}
-        <p role="status" className={estado.tipo === 'erro' ? 'text-red-400' : 'text-zinc-400'}>
+        <p role="status" className={estado.tipo === 'erro' ? 'text-alerta' : 'text-apagado'}>
           {estado.texto}
         </p>
       </section>
