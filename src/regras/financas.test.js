@@ -74,6 +74,12 @@ describe('faturaPadrao', () => {
     expect(faturaPadrao(cartao, '2026-12-20')).toBe('2027-01')
     expect(faturaPadrao({ id: 'x' }, '2026-12-20')).toBe('2026-12')
   })
+  it('respeita diaFechamento quando definido', () => {
+    const c6 = { diaFechamento: 10, diaVencimento: 15 }
+    expect(faturaPadrao(c6, '2026-11-09')).toBe('2026-11')
+    expect(faturaPadrao(c6, '2026-11-10')).toBe('2026-11')
+    expect(faturaPadrao(c6, '2026-11-11')).toBe('2026-12')
+  })
 })
 
 describe('formatarReais', () => {

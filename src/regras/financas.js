@@ -56,7 +56,8 @@ export function categorizar(descricao, regras) {
 
 export function faturaPadrao(conta, hoje) {
   let [a, m, d] = hoje.split('-').map(Number)
-  if (conta.diaVencimento && conta.diaVencimento < d) m === 12 ? (a++, (m = 1)) : m++
+  const diaCorte = conta.diaFechamento ?? conta.diaVencimento
+  if (diaCorte && diaCorte < d) m === 12 ? (a++, (m = 1)) : m++
   return `${a}-${pad(m)}`
 }
 

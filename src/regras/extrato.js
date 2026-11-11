@@ -1,4 +1,4 @@
-import { categorizar, centavosDe } from './financas.js'
+import { categorizar, centavosDe, faturaPadrao } from './financas.js'
 
 export const normaliza = (s) =>
   String(s || '')
@@ -141,7 +141,8 @@ export function parseExtrato(conteudo, opcoes = {}) {
 
   // Caso 2: Formato Markdown / Tabulado por Seções do Mercado Pago
   if (/pix recebidos|pix enviados|operacoes no cartao|rendimentos registrados/i.test(normaliza(conteudo))) {
-    return parseMpMarkdown(linhas, { anoPadrao, regras, recorrentes, contaId })
+    const contaCartao = opcoes.contaCartao ?? (opcoes.contas?.find((c) => c.tipo === 'cartao'))
+    return parseMpMarkdown(linhas, { anoPadrao, regras, recorrentes, contaId, contaCartao })
   }
 
   // Caso 3: CSV genérico / C6 Bank (delimitado por ';' ou ',')
@@ -187,7 +188,7 @@ function montarTransacao({ data, hora, descricao, valorCentavos, identificadorOr
   return tx
 }
 
-function parseMpMarkdown(linhas, { anoPadrao, regras, recorrentes, contaId }) {
+function parseMpMarkdown(linhas, { anoPadrao, regras, recorrentes, contaId, contaCartao }) {
   const secoesIgnoradas = [
     'tentativas recusadas',
     'eventos sem movimentacao financeira',
@@ -256,8 +257,8 @@ function parseMpMarkdown(linhas, { anoPadrao, regras, recorrentes, contaId }) {
     // Operações no cartão
     let faturaMes = undefined
     if (secaoAtual.includes('cartao')) {
-      const [ano, mes] = data.split('-')
-      faturaMes = `${ano}-${mes}`
+      const cartao = contaCartao ?? { diaFechamento: 12, diaVencimento: 17 }
+      faturaMes = faturaPadrao(cartao, data)
     }
 
     transacoes.push(
