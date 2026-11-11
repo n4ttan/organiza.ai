@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+.env.*
+*.pem
+vapid-private*
+# notas pessoais e skills de terceiros ficam fora do repo público
+docs/notas/
+.claude/
